@@ -25,6 +25,7 @@ AppDataSource.initialize()
 
                 const newAuthor = new Author();
                 newAuthor.name = name;
+                newAuthor.blogPosts = [];
             
                 const result = await authorRepository.save(newAuthor);
             
