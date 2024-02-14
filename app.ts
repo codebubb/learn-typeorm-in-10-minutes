@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { AppDataSource } from './AppDataSource';
 import { BlogPost } from './BlogPost';
+import { Author } from './Author';
 
 const app = express();
 app.use(express.json());
@@ -16,9 +17,34 @@ AppDataSource.initialize()
 
             // Create a repository for working with our model
             const blogPostRepository = AppDataSource.getRepository(BlogPost);
+            const authorRepository = AppDataSource.getRepository(Author);
+
+            app.post('/author', async (req: Request, res: Response) => {
+                const data = req.body;
+                const name = data.name;
+
+                const newAuthor = new Author();
+                newAuthor.name = name;
+            
+                const result = await authorRepository.save(newAuthor);
+            
+                return res.json({
+                    status: 'OK',
+                    data: result
+                })
+            });
 
             app.post('/blogPost', async (req: Request, res: Response) => {
                 const data = req.body;
+                const authorId = data.author;
+                const blogContent = data.text;
+
+                // Find the author from their ID
+                const author = await authorRepository.findOneBy({ id: authorId });
+
+                const newBlogPost = new BlogPost();
+                newBlogPost.text = blogContent;
+                newBlogPost.author = author;
             
                 const result = await blogPostRepository.save(data);
             
@@ -33,7 +59,7 @@ AppDataSource.initialize()
                 const amount = Number(req.query.amount);
             
                 const allBlogPosts = await blogPostRepository.find(
-                    { skip: offset, take: amount }
+                    { relations: { author: true } }
                 );
             
                 return res.json({
